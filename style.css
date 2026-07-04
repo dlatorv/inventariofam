@@ -328,6 +328,14 @@ input[type="text"], input[type="search"], input[type="number"], input[type="date
   .modal-overlay { align-items: center; }
 }
 
+#lockOverlay {
+  align-items: center;
+}
+#lockOverlay .modal {
+  border-radius: var(--radius);
+  max-width: 340px;
+}
+
 .modal {
   background: var(--surface);
   border-radius: var(--radius) var(--radius) 0 0;
