@@ -177,7 +177,7 @@
     main.className = "item-main";
     main.innerHTML = `
       <div class="item-name">${escapeHtml(item.name)}</div>
-      <div class="item-meta">${categoryLabel(item.category)} · ${item.quantity || ""} ${escapeHtml(item.unit || "")}</div>
+      <div class="item-meta">${categoryLabel(item.category)}</div>
     `;
     const badge = document.createElement("span");
     badge.className = `badge status-${status.key}`;
@@ -189,6 +189,27 @@
       outBadge.textContent = "Agotado";
       main.appendChild(outBadge);
     }
+
+    const qtyRow = document.createElement("div");
+    qtyRow.className = "qty-stepper";
+    const decBtn = document.createElement("button");
+    decBtn.type = "button";
+    decBtn.className = "btn qty-btn";
+    decBtn.textContent = "−";
+    decBtn.setAttribute("aria-label", `Restar uno a ${item.name}`);
+    decBtn.addEventListener("click", () => adjustQuantity(item.id, -1));
+    const qtyValue = document.createElement("span");
+    qtyValue.className = "qty-value";
+    qtyValue.textContent = `${item.quantity || 0} ${item.unit || ""}`.trim();
+    const incBtn = document.createElement("button");
+    incBtn.type = "button";
+    incBtn.className = "btn qty-btn";
+    incBtn.textContent = "+";
+    incBtn.setAttribute("aria-label", `Sumar uno a ${item.name}`);
+    incBtn.addEventListener("click", () => adjustQuantity(item.id, 1));
+    qtyRow.append(decBtn, qtyValue, incBtn);
+    main.appendChild(qtyRow);
+
     card.appendChild(main);
 
     const actions = document.createElement("div");
@@ -226,6 +247,14 @@
 
     card.appendChild(actions);
     return card;
+  }
+
+  function adjustQuantity(id, delta) {
+    const item = state.inventory.find((i) => i.id === id);
+    if (!item) return;
+    item.quantity = Math.max(0, (parseFloat(item.quantity) || 0) + delta);
+    saveState();
+    renderAll();
   }
 
   function renderInventario() {
@@ -386,7 +415,7 @@
         id,
         name: $("itemName").value.trim(),
         category,
-        quantity: parseFloat($("itemQuantity").value) || 0,
+        quantity: Math.max(0, parseFloat($("itemQuantity").value) || 0),
         unit: $("itemUnit").value.trim(),
         purchaseDate,
         expirationDate: expirationDate || null,
@@ -456,7 +485,7 @@
         id: uid(),
         name: entry.name,
         category: $("boughtCategory").value,
-        quantity: parseFloat($("boughtQuantity").value) || 0,
+        quantity: Math.max(0, parseFloat($("boughtQuantity").value) || 0),
         unit: $("boughtUnit").value.trim(),
         purchaseDate: todayISO(),
         expirationDate: $("boughtExpirationDate").value || null,
@@ -531,16 +560,64 @@
         renderSettings();
       }
     });
+
+    $("btnImport").addEventListener("click", () => $("importFile").click());
+
+    $("importFile").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let imported;
+        try {
+          imported = JSON.parse(reader.result);
+        } catch (err) {
+          alert("No se pudo leer el archivo. Asegúrate de elegir un archivo exportado desde esta app.");
+          e.target.value = "";
+          return;
+        }
+        if (!imported || !Array.isArray(imported.inventory) || !Array.isArray(imported.shoppingList)) {
+          alert("El archivo no tiene el formato esperado.");
+          e.target.value = "";
+          return;
+        }
+        if (confirm("Esto reemplazará tu inventario y lista de compras actuales por los del archivo. ¿Continuar?")) {
+          state = {
+            inventory: imported.inventory,
+            shoppingList: imported.shoppingList,
+            settings: imported.settings
+              ? { ...DEFAULT_SETTINGS, ...imported.settings, shelfLife: { ...DEFAULT_SHELF_LIFE, ...(imported.settings.shelfLife || {}) } }
+              : { ...DEFAULT_SETTINGS, shelfLife: { ...DEFAULT_SHELF_LIFE } },
+          };
+          saveState();
+          renderAll();
+          renderSettings();
+        }
+        e.target.value = "";
+      };
+      reader.readAsText(file);
+    });
   }
 
   // ---------- Lock screen (soft privacy gate, not real security) ----------
   const LOCK_STORAGE_KEY = "familyInventory.unlocked";
   const LOCK_PIN_HASH = "2ee62f16ca41fe7879853975d5fcb4cb858f6edb5fd0355cfb7948d997e6b6a9"; // sha256("3312")
+  const LAST_ACTIVITY_KEY = "familyInventory.lastActivity";
+  const AUTO_LOCK_MS = 60 * 60 * 1000; // re-lock after 1 hour of inactivity
 
   async function sha256Hex(text) {
     const bytes = new TextEncoder().encode(text);
     const digest = await crypto.subtle.digest("SHA-256", bytes);
     return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function recordActivity() {
+    localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+  }
+
+  function autoLockExpired() {
+    const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || "0", 10);
+    return !last || Date.now() - last > AUTO_LOCK_MS;
   }
 
   function setLocked(locked) {
@@ -553,11 +630,13 @@
       $("lockPin").focus();
     } else {
       localStorage.setItem(LOCK_STORAGE_KEY, "1");
+      recordActivity();
     }
   }
 
   function initLock() {
-    setLocked(localStorage.getItem(LOCK_STORAGE_KEY) !== "1");
+    const staysUnlocked = localStorage.getItem(LOCK_STORAGE_KEY) === "1" && !autoLockExpired();
+    setLocked(!staysUnlocked);
 
     $("lockForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -570,6 +649,18 @@
     });
 
     $("btnLockNow").addEventListener("click", () => setLocked(true));
+
+    ["click", "keydown", "touchstart"].forEach((evt) => {
+      document.addEventListener(evt, () => {
+        if (!document.body.classList.contains("locked")) recordActivity();
+      });
+    });
+
+    setInterval(() => {
+      if (!document.body.classList.contains("locked") && autoLockExpired()) {
+        setLocked(true);
+      }
+    }, 60 * 1000);
   }
 
   function escapeHtml(str) {

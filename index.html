@@ -6,6 +6,13 @@
 <title>Inventario Familiar</title>
 <meta name="description" content="Organiza el inventario de tu casa, tu lista de compras y las fechas de caducidad en un solo lugar.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧺</text></svg>">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#b5651d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Inventario">
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="locked">
@@ -91,6 +98,9 @@
 
     <!-- AJUSTES -->
     <section id="tab-ajustes" class="tab-panel">
+      <h2 class="section-title">Usar como app</h2>
+      <p class="hint-text">Para que se vea a pantalla completa (sin la barra del navegador): abre el menú de tu navegador y elige "Agregar a la pantalla de inicio" o "Instalar app".</p>
+
       <h2 class="section-title">Alertas</h2>
       <label class="settings-row">
         Avisar cuando falten
@@ -104,9 +114,11 @@
       <h2 class="section-title">Datos</h2>
       <div class="settings-row">
         <button class="btn" id="btnExport">Exportar datos (JSON)</button>
+        <button class="btn" id="btnImport">Importar datos (JSON)</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
         <button class="btn danger-outline" id="btnReset">Borrar todos los datos</button>
       </div>
-      <p class="hint-text">Todo se guarda en este navegador (localStorage). No se envía a ningún servidor.</p>
+      <p class="hint-text">Todo se guarda en este navegador (localStorage), no se envía a ningún servidor. Usa "Exportar" para hacer una copia de respaldo, y "Importar" para restaurarla en este u otro dispositivo.</p>
     </section>
 
   </main>
