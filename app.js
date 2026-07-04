@@ -14,13 +14,6 @@
     { id: "otros", label: "Otros" },
   ];
 
-  const LOCATIONS = [
-    { id: "refrigerador", label: "Refrigerador" },
-    { id: "congelador", label: "Congelador" },
-    { id: "despensa", label: "Despensa" },
-    { id: "otro", label: "Otro" },
-  ];
-
   // Default shelf life in days, used to suggest an expiration date by category
   // when the user doesn't provide one. null = no fixed expiration suggested.
   const DEFAULT_SHELF_LIFE = {
@@ -93,11 +86,6 @@
   function categoryLabel(id) {
     const c = CATEGORIES.find((c) => c.id === id);
     return c ? c.label : id;
-  }
-
-  function locationLabel(id) {
-    const l = LOCATIONS.find((l) => l.id === id);
-    return l ? l.label : id;
   }
 
   function computeStatus(item) {
@@ -181,6 +169,7 @@
   // ---------- Render: Inventario ----------
   function buildInventoryCard(item) {
     const status = computeStatus(item);
+    const outOfStock = (parseFloat(item.quantity) || 0) <= 0;
     const card = document.createElement("div");
     card.className = `item-card status-${status.key}`;
 
@@ -188,12 +177,18 @@
     main.className = "item-main";
     main.innerHTML = `
       <div class="item-name">${escapeHtml(item.name)}</div>
-      <div class="item-meta">${categoryLabel(item.category)} · ${locationLabel(item.location)} · ${item.quantity || ""} ${escapeHtml(item.unit || "")}</div>
+      <div class="item-meta">${categoryLabel(item.category)} · ${item.quantity || ""} ${escapeHtml(item.unit || "")}</div>
     `;
     const badge = document.createElement("span");
     badge.className = `badge status-${status.key}`;
     badge.textContent = status.label;
     main.appendChild(badge);
+    if (outOfStock) {
+      const outBadge = document.createElement("span");
+      outBadge.className = "badge outofstock";
+      outBadge.textContent = "Agotado";
+      main.appendChild(outBadge);
+    }
     card.appendChild(main);
 
     const actions = document.createElement("div");
@@ -205,7 +200,7 @@
     editBtn.addEventListener("click", () => openItemModal(item));
     actions.appendChild(editBtn);
 
-    if (status.key === "expired" || status.key === "soon") {
+    if (status.key === "expired" || status.key === "soon" || outOfStock) {
       const buyBtn = document.createElement("button");
       buyBtn.className = "btn small";
       buyBtn.textContent = "A compras";
@@ -236,12 +231,10 @@
   function renderInventario() {
     const search = $("invSearch").value.trim().toLowerCase();
     const catFilter = $("invFilterCategory").value;
-    const locFilter = $("invFilterLocation").value;
 
     let items = state.inventory.slice();
     if (search) items = items.filter((i) => i.name.toLowerCase().includes(search));
     if (catFilter) items = items.filter((i) => i.category === catFilter);
-    if (locFilter) items = items.filter((i) => i.location === locFilter);
 
     items.sort((a, b) => {
       const sa = computeStatus(a).key, sb = computeStatus(b).key;
@@ -347,7 +340,6 @@
     $("itemId").value = item ? item.id : "";
     $("itemName").value = item ? item.name : "";
     $("itemCategory").value = item ? item.category : CATEGORIES[0].id;
-    $("itemLocation").value = item ? item.location : LOCATIONS[0].id;
     $("itemQuantity").value = item ? item.quantity : 1;
     $("itemUnit").value = item ? item.unit || "" : "";
     $("itemPurchaseDate").value = item ? item.purchaseDate || "" : todayISO();
@@ -394,7 +386,6 @@
         id,
         name: $("itemName").value.trim(),
         category,
-        location: $("itemLocation").value,
         quantity: parseFloat($("itemQuantity").value) || 0,
         unit: $("itemUnit").value.trim(),
         purchaseDate,
@@ -423,7 +414,6 @@
     $("boughtId").value = entry.id;
     $("boughtName").textContent = entry.name;
     $("boughtCategory").value = entry.category || CATEGORIES[0].id;
-    $("boughtLocation").value = LOCATIONS[0].id;
     $("boughtQuantity").value = entry.quantity || 1;
     $("boughtUnit").value = entry.unit || "";
     const suggestion = suggestExpiration($("boughtCategory").value, todayISO());
@@ -466,7 +456,6 @@
         id: uid(),
         name: entry.name,
         category: $("boughtCategory").value,
-        location: $("boughtLocation").value,
         quantity: parseFloat($("boughtQuantity").value) || 0,
         unit: $("boughtUnit").value.trim(),
         purchaseDate: todayISO(),
@@ -486,7 +475,6 @@
   function initInventoryToolbar() {
     $("invSearch").addEventListener("input", renderInventario);
     $("invFilterCategory").addEventListener("change", renderInventario);
-    $("invFilterLocation").addEventListener("change", renderInventario);
   }
 
   // ---------- Wiring: compras quick add ----------
@@ -600,11 +588,8 @@
     initLock();
 
     fillSelect($("invFilterCategory"), CATEGORIES, "Todas las categorías");
-    fillSelect($("invFilterLocation"), LOCATIONS, "Todos los lugares");
     fillSelect($("itemCategory"), CATEGORIES, null);
-    fillSelect($("itemLocation"), LOCATIONS, null);
     fillSelect($("boughtCategory"), CATEGORIES, null);
-    fillSelect($("boughtLocation"), LOCATIONS, null);
 
     initTabs();
     initItemModal();

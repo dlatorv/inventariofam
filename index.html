@@ -73,7 +73,6 @@
       <div class="toolbar">
         <input type="search" id="invSearch" placeholder="Buscar en el inventario...">
         <select id="invFilterCategory"><option value="">Todas las categorías</option></select>
-        <select id="invFilterLocation"><option value="">Todos los lugares</option></select>
         <button class="btn primary" id="btnAddInventory">+ Agregar ítem</button>
       </div>
       <div id="inventoryList" class="item-list"></div>
@@ -122,14 +121,9 @@
       <label>Nombre
         <input type="text" id="itemName" required placeholder="Ej: Manzanas, Huevos, Leche...">
       </label>
-      <div class="form-row">
-        <label>Categoría
-          <select id="itemCategory"></select>
-        </label>
-        <label>Lugar
-          <select id="itemLocation"></select>
-        </label>
-      </div>
+      <label>Categoría
+        <select id="itemCategory"></select>
+      </label>
       <div class="form-row">
         <label>Cantidad
           <input type="number" id="itemQuantity" min="0" step="0.5" value="1">
@@ -163,14 +157,9 @@
     <form id="boughtForm">
       <input type="hidden" id="boughtId">
       <p class="hint-text">Marcaste <strong id="boughtName"></strong> como comprado. Confirma los datos para agregarlo a tu inventario.</p>
-      <div class="form-row">
-        <label>Categoría
-          <select id="boughtCategory"></select>
-        </label>
-        <label>Lugar
-          <select id="boughtLocation"></select>
-        </label>
-      </div>
+      <label>Categoría
+        <select id="boughtCategory"></select>
+      </label>
       <div class="form-row">
         <label>Cantidad
           <input type="number" id="boughtQuantity" min="0" step="0.5" value="1">
