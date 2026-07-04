@@ -88,6 +88,20 @@ body {
   align-items: center;
   gap: 0.4rem;
 }
+.brand #btnLockNow {
+  margin-left: auto;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+body.locked #app { display: none; }
+#lockError { color: var(--red); }
+#lockPin {
+  width: 100%;
+  font-size: 1.4rem;
+  letter-spacing: 0.3rem;
+  text-align: center;
+}
 
 .tabs {
   display: flex;

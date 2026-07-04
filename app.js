@@ -545,6 +545,45 @@
     });
   }
 
+  // ---------- Lock screen (soft privacy gate, not real security) ----------
+  const LOCK_STORAGE_KEY = "familyInventory.unlocked";
+  const LOCK_PIN_HASH = "2ee62f16ca41fe7879853975d5fcb4cb858f6edb5fd0355cfb7948d997e6b6a9"; // sha256("3312")
+
+  async function sha256Hex(text) {
+    const bytes = new TextEncoder().encode(text);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function setLocked(locked) {
+    document.body.classList.toggle("locked", locked);
+    $("lockOverlay").hidden = !locked;
+    if (locked) {
+      localStorage.removeItem(LOCK_STORAGE_KEY);
+      $("lockPin").value = "";
+      $("lockError").hidden = true;
+      $("lockPin").focus();
+    } else {
+      localStorage.setItem(LOCK_STORAGE_KEY, "1");
+    }
+  }
+
+  function initLock() {
+    setLocked(localStorage.getItem(LOCK_STORAGE_KEY) !== "1");
+
+    $("lockForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const hash = await sha256Hex($("lockPin").value.trim());
+      if (hash === LOCK_PIN_HASH) {
+        setLocked(false);
+      } else {
+        $("lockError").hidden = false;
+      }
+    });
+
+    $("btnLockNow").addEventListener("click", () => setLocked(true));
+  }
+
   function escapeHtml(str) {
     const div = document.createElement("div");
     div.textContent = str == null ? "" : String(str);
@@ -558,6 +597,8 @@
   }
 
   function init() {
+    initLock();
+
     fillSelect($("invFilterCategory"), CATEGORIES, "Todas las categorías");
     fillSelect($("invFilterLocation"), LOCATIONS, "Todos los lugares");
     fillSelect($("itemCategory"), CATEGORIES, null);
