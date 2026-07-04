@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Inventario">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body class="locked">
 
@@ -81,6 +81,10 @@
         <input type="search" id="invSearch" placeholder="Buscar en el inventario...">
         <select id="invFilterCategory"><option value="">Todas las categorías</option></select>
         <button class="btn primary" id="btnAddInventory">+ Agregar ítem</button>
+      </div>
+      <div class="view-toggle">
+        <button class="btn small view-btn" id="btnViewList" data-view="list">☰ Lista</button>
+        <button class="btn small view-btn" id="btnViewGrid" data-view="grid">▦ Mosaico</button>
       </div>
       <div id="inventoryList" class="item-list"></div>
       <p class="empty-hint" id="inventoryEmpty" hidden>Tu inventario está vacío. Agrega lo que tengas en casa.</p>
@@ -192,6 +196,6 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>
