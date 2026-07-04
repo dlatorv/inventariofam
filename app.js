@@ -14,6 +14,21 @@
     { id: "otros", label: "Otros" },
   ];
 
+  const CATEGORY_ICONS = {
+    fruta: "🍎",
+    verdura: "🥦",
+    lacteos_huevos: "🥚",
+    carne_pescado: "🍗",
+    congelados: "🧊",
+    despensa: "🥫",
+    limpieza: "🧼",
+    otros: "📦",
+  };
+
+  function categoryIcon(id) {
+    return CATEGORY_ICONS[id] || "📦";
+  }
+
   // Default shelf life in days, used to suggest an expiration date by category
   // when the user doesn't provide one. null = no fixed expiration suggested.
   const DEFAULT_SHELF_LIFE = {
@@ -176,7 +191,10 @@
     const main = document.createElement("div");
     main.className = "item-main";
     main.innerHTML = `
-      <div class="item-name">${escapeHtml(item.name)}</div>
+      <div class="item-title-row">
+        <span class="item-icon">${categoryIcon(item.category)}</span>
+        <span class="item-name">${escapeHtml(item.name)}</span>
+      </div>
       <div class="item-meta">${categoryLabel(item.category)}</div>
     `;
     const badge = document.createElement("span");
@@ -501,9 +519,22 @@
   }
 
   // ---------- Wiring: inventario toolbar ----------
+  const VIEW_MODE_KEY = "familyInventory.viewMode";
+
+  function setViewMode(mode) {
+    localStorage.setItem(VIEW_MODE_KEY, mode);
+    $("inventoryList").classList.toggle("grid-view", mode === "grid");
+    document.querySelectorAll(".view-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === mode));
+  }
+
   function initInventoryToolbar() {
     $("invSearch").addEventListener("input", renderInventario);
     $("invFilterCategory").addEventListener("change", renderInventario);
+
+    document.querySelectorAll(".view-btn").forEach((btn) => {
+      btn.addEventListener("click", () => setViewMode(btn.dataset.view));
+    });
+    setViewMode(localStorage.getItem(VIEW_MODE_KEY) || "list");
   }
 
   // ---------- Wiring: compras quick add ----------
